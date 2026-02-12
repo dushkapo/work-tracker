@@ -1,0 +1,1722 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Трекер Времени</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0066FF;
+            --primary-dark: #0052CC;
+            --success: #00C853;
+            --danger: #FF3B30;
+            --warning: #FF9500;
+            --bg-main: #0A0E1A;
+            --bg-card: #131824;
+            --bg-elevated: #1A202E;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8B92A6;
+            --border: #2A3142;
+            --accent: #00D9FF;
+            --day-color: #FFB800;
+            --night-color: #6B4EFF;
+        }
+
+        body {
+            font-family: 'Sora', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(0, 102, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(107, 78, 255, 0.1) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .menu-btn {
+            width: 40px;
+            height: 40px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .menu-btn:hover {
+            background: var(--primary);
+            transform: scale(1.05);
+        }
+
+        /* Login Screen */
+        .login-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh;
+            text-align: center;
+        }
+
+        .login-title {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            letter-spacing: -2px;
+        }
+
+        .login-subtitle {
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 40px;
+        }
+
+        .code-input {
+            width: 100%;
+            max-width: 300px;
+            padding: 20px 24px;
+            font-size: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            text-align: center;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            background: var(--bg-card);
+            border: 2px solid var(--border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .code-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(0, 102, 255, 0.1);
+        }
+
+        .login-btn {
+            margin-top: 24px;
+            padding: 18px 48px;
+            font-size: 16px;
+            font-weight: 700;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Sora', sans-serif;
+        }
+
+        .login-btn:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 102, 255, 0.4);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Main App */
+        .app-screen {
+            display: none;
+        }
+
+        .app-screen.active {
+            display: block;
+        }
+
+        /* Date Time Card */
+        .datetime-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .current-date {
+            font-size: 16px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .current-time {
+            font-size: 48px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 2px;
+        }
+
+        /* Timer Card */
+        .timer-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 40px 30px;
+            margin-bottom: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timer-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .timer-card.active::before {
+            opacity: 1;
+        }
+
+        .timer-display {
+            font-size: 64px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: 4px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .earnings-display {
+            font-size: 42px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--success), #00FFB3);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 24px;
+        }
+
+        .timer-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+        }
+
+        .timer-info-item {
+            text-align: center;
+        }
+
+        .timer-info-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .timer-info-value {
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Current Rates */
+        .rates-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .rates-title {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        .rate-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+        }
+
+        .rate-item:not(:last-child) {
+            border-bottom: 1px solid var(--border);
+        }
+
+        .rate-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .rate-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            width: 100%;
+            padding: 20px;
+            font-size: 18px;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 102, 255, 0.4);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #E6342A;
+            box-shadow: 0 8px 24px rgba(255, 59, 48, 0.4);
+        }
+
+        /* Store Toggle */
+        .store-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            margin-bottom: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .store-toggle:hover {
+            background: var(--bg-card);
+        }
+
+        .toggle-switch {
+            width: 52px;
+            height: 28px;
+            background: var(--border);
+            border-radius: 14px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-slider {
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .toggle-switch.active .toggle-slider {
+            left: 27px;
+        }
+
+        /* History */
+        .section-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shift-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .shift-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .shift-item:hover {
+            border-color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .shift-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .shift-date {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .shift-badge {
+            padding: 4px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .shift-badge.day {
+            background: rgba(255, 184, 0, 0.15);
+            color: var(--day-color);
+        }
+
+        .shift-badge.night {
+            background: rgba(107, 78, 255, 0.15);
+            color: var(--night-color);
+        }
+
+        .shift-badge.mixed {
+            background: linear-gradient(90deg, rgba(255, 184, 0, 0.15) 50%, rgba(107, 78, 255, 0.15) 50%);
+            color: var(--text-primary);
+        }
+
+        .shift-time {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .shift-amount {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--success);
+        }
+
+        .shift-error {
+            color: var(--danger);
+            font-size: 13px;
+            margin-top: 8px;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 400px;
+            width: 100%;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 16px;
+        }
+
+        .modal-body {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 24px;
+        }
+
+        .modal-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            font-family: 'Sora', sans-serif;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn-cancel {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 1px solid var(--border);
+        }
+
+        .modal-btn-confirm {
+            background: var(--danger);
+            color: white;
+        }
+
+        .modal-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            z-index: 1001;
+            animation: slideInRight 0.3s ease;
+            max-width: 320px;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success);
+        }
+
+        /* Menu Panel */
+        .menu-panel {
+            position: fixed;
+            top: 0;
+            left: -100%;
+            width: 300px;
+            height: 100vh;
+            background: var(--bg-card);
+            border-right: 1px solid var(--border);
+            z-index: 999;
+            transition: left 0.3s ease;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .menu-panel.active {
+            left: 0;
+        }
+
+        .menu-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 998;
+        }
+
+        .menu-overlay.active {
+            display: block;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .menu-close {
+            width: 36px;
+            height: 36px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        .menu-item {
+            padding: 16px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-item:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .menu-item-icon {
+            font-size: 20px;
+        }
+
+        /* Screen Container */
+        .screen {
+            display: none;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        /* Stats Screen */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.success {
+            color: var(--success);
+        }
+
+        .stat-value.danger {
+            color: var(--danger);
+        }
+
+        /* Input Field */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            font-size: 13px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 16px;
+            font-size: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(0, 102, 255, 0.1);
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 12px;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 8px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: right;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .timer-display {
+                font-size: 48px;
+            }
+
+            .earnings-display {
+                font-size: 32px;
+            }
+
+            .current-time {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen" class="login-screen">
+            <div class="login-title">⏱️</div>
+            <div class="login-title">Трекер Времени</div>
+            <div class="login-subtitle">Введите ваш код для входа</div>
+            <input type="text" id="codeInput" class="code-input" placeholder="••••••" maxlength="6">
+            <button id="loginBtn" class="login-btn">Войти</button>
+        </div>
+
+        <!-- Main App -->
+        <div id="appScreen" class="app-screen">
+            <!-- Header -->
+            <div class="header">
+                <div class="logo">💼 Трекер</div>
+                <div class="menu-btn" id="menuBtn">☰</div>
+            </div>
+
+            <!-- Main Screen -->
+            <div id="mainScreen" class="screen active">
+                <!-- Date Time -->
+                <div class="datetime-card">
+                    <div class="current-date" id="currentDate">--</div>
+                    <div class="current-time" id="currentTime">--:--:--</div>
+                </div>
+
+                <!-- Timer -->
+                <div class="timer-card" id="timerCard">
+                    <div class="timer-display" id="timerDisplay">00:00:00</div>
+                    <div class="earnings-display" id="earningsDisplay">0.00₾</div>
+
+                    <div id="timerInfo" class="timer-info" style="display: none;">
+                        <div class="timer-info-item">
+                            <div class="timer-info-label">Начало</div>
+                            <div class="timer-info-value" id="startTimeDisplay">--:--</div>
+                        </div>
+                        <div class="timer-info-item">
+                            <div class="timer-info-label">Осталось до 12ч</div>
+                            <div class="timer-info-value" id="remainingDisplay">--:--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Current Rates -->
+                <div class="rates-card">
+                    <div class="rates-title">Текущие ставки</div>
+                    <div class="rate-item">
+                        <div class="rate-label">🌞 Дневная</div>
+                        <div class="rate-value" id="dayRateDisplay">4.8₾/час</div>
+                    </div>
+                    <div class="rate-item">
+                        <div class="rate-label">🌙 Ночная (мой)</div>
+                        <div class="rate-value" id="nightRateDisplay">85₾</div>
+                    </div>
+                    <div class="rate-item">
+                        <div class="rate-label">🌙 Ночная (другой)</div>
+                        <div class="rate-value" id="nightOtherRateDisplay">105₾</div>
+                    </div>
+                </div>
+
+                <!-- Store Toggle -->
+                <div class="store-toggle" id="storeToggle">
+                    <span>Другой магазин</span>
+                    <div class="toggle-switch" id="toggleSwitch">
+                        <div class="toggle-slider"></div>
+                    </div>
+                </div>
+
+                <!-- Start/Stop Buttons -->
+                <button id="startBtn" class="btn-primary">
+                    ▶️ <span>Начать смену</span>
+                </button>
+                <button id="stopBtn" class="btn-primary btn-danger" style="display: none;">
+                    ⏹️ <span>Завершить смену</span>
+                </button>
+
+                <!-- History -->
+                <div style="margin-top: 40px;">
+                    <div class="section-title">📋 Отработанные смены</div>
+                    <div id="shiftList" class="shift-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">📭</div>
+                            <div>Смен пока нет</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats Screen -->
+            <div id="statsScreen" class="screen">
+                <div class="section-title">📊 Статистика</div>
+                
+                <div class="input-group">
+                    <label class="input-label">Период</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <input type="date" id="statsStartDate" class="input-field">
+                        <input type="date" id="statsEndDate" class="input-field">
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">Отработано</div>
+                        <div class="stat-value" id="totalHoursStats">0ч 0м</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Рабочих дней</div>
+                        <div class="stat-value" id="totalDaysStats">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Заработано</div>
+                        <div class="stat-value success" id="totalEarnedStats">0₾</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Штрафы</div>
+                        <div class="stat-value danger" id="totalPenaltiesStats">0₾</div>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="margin-top: 16px;">
+                    <div class="stat-label">Чистый заработок</div>
+                    <div class="stat-value success" id="netEarningsStats">0₾</div>
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <div class="section-title" style="font-size: 16px; margin-bottom: 12px;">Смены</div>
+                    <div class="rates-card">
+                        <div class="rate-item">
+                            <div class="rate-label">🌞 Дневных</div>
+                            <div class="rate-value" id="dayShiftsStats">0</div>
+                        </div>
+                        <div class="rate-item">
+                            <div class="rate-label">🌙 Ночных (мой)</div>
+                            <div class="rate-value" id="nightShiftsStats">0</div>
+                        </div>
+                        <div class="rate-item">
+                            <div class="rate-label">🌙 Ночных (другой)</div>
+                            <div class="rate-value" id="nightOtherShiftsStats">0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Penalties -->
+                <div style="margin-top: 32px;">
+                    <div class="section-title">🚨 Штрафы</div>
+                    <button class="btn-primary" id="addPenaltyBtn" style="margin-bottom: 16px;">+ Добавить штраф</button>
+                    <div id="penaltyList"></div>
+                </div>
+            </div>
+
+            <!-- Plan Screen -->
+            <div id="planScreen" class="screen">
+                <div class="section-title">📝 План на месяц</div>
+                
+                <div class="input-group">
+                    <label class="input-label">Месяц</label>
+                    <input type="month" id="planMonth" class="input-field">
+                </div>
+
+                <div class="stat-card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label class="input-label">🌞 Дневные смены</label>
+                        <input type="number" id="planDayShifts" class="input-field" min="0" value="0">
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="planDayProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="planDayText">0/0 (0%)</div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
+                        Планируемо: <span id="planDayEarnings">0₾</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label class="input-label">🌙 Ночные (мой магазин)</label>
+                        <input type="number" id="planNightShifts" class="input-field" min="0" value="0">
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="planNightProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="planNightText">0/0 (0%)</div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
+                        Планируемо: <span id="planNightEarnings">0₾</span>
+                    </div>
+                </div>
+
+                <div class="stat-card" style="margin-bottom: 20px;">
+                    <div class="input-group">
+                        <label class="input-label">🌙 Ночные (другой магазин)</label>
+                        <input type="number" id="planNightOtherShifts" class="input-field" min="0" value="0">
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="planNightOtherProgress" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="planNightOtherText">0/0 (0%)</div>
+                    </div>
+                    <div style="margin-top: 12px; font-size: 14px; color: var(--text-secondary);">
+                        Планируемо: <span id="planNightOtherEarnings">0₾</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Планируемый заработок</div>
+                    <div class="stat-value success" id="planTotalEarnings">0₾</div>
+                </div>
+
+                <button class="btn-primary" id="savePlanBtn" style="margin-top: 20px;">💾 Сохранить план</button>
+            </div>
+
+            <!-- Rates Screen -->
+            <div id="ratesScreen" class="screen">
+                <div class="section-title">💰 Настройка ставок</div>
+                
+                <div class="input-group">
+                    <label class="input-label">Дневная ставка (за час)</label>
+                    <input type="number" id="dayRateInput" class="input-field" step="0.1" min="0" value="4.8">
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Ночная ставка (за смену)</label>
+                    <input type="number" id="nightRateInput" class="input-field" step="1" min="0" value="85">
+                </div>
+
+                <div style="background: var(--bg-elevated); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+                    <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+                        ℹ️ Другой магазин: автоматически +20₾ к ночной ставке
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="saveRatesBtn">💾 Сохранить ставки</button>
+            </div>
+        </div>
+
+        <!-- Menu Panel -->
+        <div class="menu-overlay" id="menuOverlay"></div>
+        <div class="menu-panel" id="menuPanel">
+            <div class="menu-header">
+                <div style="font-weight: 800; font-size: 18px;">Меню</div>
+                <div class="menu-close" id="menuClose">✕</div>
+            </div>
+            <div class="menu-item" data-screen="main">
+                <span class="menu-item-icon">🏠</span>
+                <span>Главная</span>
+            </div>
+            <div class="menu-item" data-screen="stats">
+                <span class="menu-item-icon">📊</span>
+                <span>Статистика</span>
+            </div>
+            <div class="menu-item" data-screen="plan">
+                <span class="menu-item-icon">📝</span>
+                <span>План</span>
+            </div>
+            <div class="menu-item" data-screen="rates">
+                <span class="menu-item-icon">💰</span>
+                <span>Ставки</span>
+            </div>
+            <div class="menu-item" id="logoutBtn" style="margin-top: auto; background: var(--danger); border-color: var(--danger); color: white;">
+                <span class="menu-item-icon">🚪</span>
+                <span>Выход</span>
+            </div>
+        </div>
+
+        <!-- Confirm Modal -->
+        <div class="modal" id="confirmModal">
+            <div class="modal-content">
+                <div class="modal-title">Завершить смену?</div>
+                <div class="modal-body" id="modalBody">
+                    Вы уверены, что хотите завершить текущую смену?
+                </div>
+                <div class="modal-buttons">
+                    <button class="modal-btn modal-btn-cancel" id="modalCancel">Отмена</button>
+                    <button class="modal-btn modal-btn-confirm" id="modalConfirm">Завершить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase Configuration (REPLACE WITH YOUR CONFIG)
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // App State
+        let currentUser = null;
+        let activeShift = null;
+        let timerInterval = null;
+        let rates = {
+            day: 4.8,
+            night: 85,
+            nightOther: 105
+        };
+
+        // Load saved user code
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedCode = localStorage.getItem('userCode');
+            if (savedCode) {
+                loginUser(savedCode);
+            }
+            updateCurrentDateTime();
+            setInterval(updateCurrentDateTime, 1000);
+        });
+
+        // Login
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const code = document.getElementById('codeInput').value.trim().toUpperCase();
+            if (code.length === 6) {
+                loginUser(code);
+            }
+        });
+
+        document.getElementById('codeInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn').click();
+            }
+        });
+
+        function loginUser(code) {
+            // Check if user exists in Firebase
+            database.ref('users/' + code).once('value').then((snapshot) => {
+                currentUser = code;
+                localStorage.setItem('userCode', code);
+                
+                if (!snapshot.exists()) {
+                    // Create new user
+                    database.ref('users/' + code).set({
+                        createdAt: Date.now(),
+                        rates: rates
+                    });
+                } else {
+                    // Load user rates
+                    const userData = snapshot.val();
+                    if (userData.rates) {
+                        rates = userData.rates;
+                        updateRatesDisplay();
+                    }
+                    // Check for active shift
+                    if (userData.activeShift) {
+                        activeShift = userData.activeShift;
+                        startTimerDisplay();
+                    }
+                }
+
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('appScreen').classList.add('active');
+                loadShifts();
+                loadStats();
+                loadPlan();
+            });
+        }
+
+        // Logout
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            if (activeShift) {
+                showNotification('⚠️ Завершите смену перед выходом');
+                return;
+            }
+            localStorage.removeItem('userCode');
+            currentUser = null;
+            location.reload();
+        });
+
+        // Update Date/Time
+        function updateCurrentDateTime() {
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('ru-RU', { 
+                day: 'numeric', 
+                month: 'long', 
+                year: 'numeric' 
+            });
+            const timeStr = now.toLocaleTimeString('ru-RU');
+            
+            document.getElementById('currentDate').textContent = dateStr;
+            document.getElementById('currentTime').textContent = timeStr;
+        }
+
+        // Start Shift
+        document.getElementById('startBtn').addEventListener('click', () => {
+            const now = Date.now();
+            const isOtherStore = document.getElementById('toggleSwitch').classList.contains('active');
+            
+            activeShift = {
+                startTime: now,
+                isOtherStore: isOtherStore,
+                startRates: { ...rates }
+            };
+
+            // Save to Firebase
+            database.ref('users/' + currentUser + '/activeShift').set(activeShift);
+
+            startTimerDisplay();
+            showNotification('✅ Смена начата!');
+        });
+
+        // Stop Shift
+        document.getElementById('stopBtn').addEventListener('click', () => {
+            const duration = Date.now() - activeShift.startTime;
+            const hours = duration / (1000 * 60 * 60);
+            
+            document.getElementById('modalBody').innerHTML = `
+                <strong>Начало:</strong> ${new Date(activeShift.startTime).toLocaleTimeString('ru-RU')}<br>
+                <strong>Длительность:</strong> ${formatDuration(duration)}<br>
+                <strong>Заработано:</strong> ${calculateEarnings(activeShift).toFixed(2)}₾
+            `;
+            document.getElementById('confirmModal').classList.add('active');
+        });
+
+        document.getElementById('modalCancel').addEventListener('click', () => {
+            document.getElementById('confirmModal').classList.remove('active');
+        });
+
+        document.getElementById('modalConfirm').addEventListener('click', () => {
+            stopShift();
+            document.getElementById('confirmModal').classList.remove('active');
+        });
+
+        function stopShift() {
+            const endTime = Date.now();
+            const shift = {
+                ...activeShift,
+                endTime: endTime,
+                earnings: calculateEarnings(activeShift),
+                duration: endTime - activeShift.startTime
+            };
+
+            // Determine shift type
+            const startHour = new Date(activeShift.startTime).getHours();
+            if (startHour >= 6 && startHour < 18) {
+                shift.type = 'day';
+            } else {
+                // Check if ended before 8:00
+                const endHour = new Date(endTime).getHours();
+                const endMinute = new Date(endTime).getMinutes();
+                if (endHour < 8 || (endHour === 8 && endMinute === 0)) {
+                    shift.error = 'Закончено раньше дозволенного';
+                    shift.earnings = 0;
+                }
+                shift.type = activeShift.isOtherStore ? 'nightOther' : 'night';
+            }
+
+            // Save shift to Firebase
+            const shiftId = 'shift_' + Date.now();
+            database.ref('users/' + currentUser + '/shifts/' + shiftId).set(shift);
+
+            // Remove active shift
+            database.ref('users/' + currentUser + '/activeShift').remove();
+            
+            activeShift = null;
+            stopTimerDisplay();
+            loadShifts();
+            loadStats();
+            updatePlanProgress();
+            showNotification('✅ Смена завершена!');
+        }
+
+        function startTimerDisplay() {
+            document.getElementById('startBtn').style.display = 'none';
+            document.getElementById('stopBtn').style.display = 'block';
+            document.getElementById('timerInfo').style.display = 'grid';
+            document.getElementById('timerCard').classList.add('active');
+            document.getElementById('storeToggle').style.pointerEvents = 'none';
+            document.getElementById('storeToggle').style.opacity = '0.5';
+
+            if (activeShift.isOtherStore) {
+                document.getElementById('toggleSwitch').classList.add('active');
+            }
+
+            document.getElementById('startTimeDisplay').textContent = 
+                new Date(activeShift.startTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+
+            timerInterval = setInterval(updateTimer, 100);
+
+            // Check for 12 hour notification
+            setTimeout(() => {
+                if (activeShift) {
+                    showNotification('⏰ Прошло 12 часов! Рекомендуем завершить смену');
+                }
+            }, 12 * 60 * 60 * 1000);
+        }
+
+        function stopTimerDisplay() {
+            document.getElementById('startBtn').style.display = 'block';
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('timerInfo').style.display = 'none';
+            document.getElementById('timerCard').classList.remove('active');
+            document.getElementById('timerDisplay').textContent = '00:00:00';
+            document.getElementById('earningsDisplay').textContent = '0.00₾';
+            document.getElementById('storeToggle').style.pointerEvents = 'auto';
+            document.getElementById('storeToggle').style.opacity = '1';
+            clearInterval(timerInterval);
+        }
+
+        function updateTimer() {
+            if (!activeShift) return;
+
+            const duration = Date.now() - activeShift.startTime;
+            const earnings = calculateEarnings(activeShift);
+            
+            document.getElementById('timerDisplay').textContent = formatDuration(duration);
+            document.getElementById('earningsDisplay').textContent = earnings.toFixed(2) + '₾';
+
+            // Remaining time to 12 hours
+            const remaining = (12 * 60 * 60 * 1000) - duration;
+            if (remaining > 0) {
+                document.getElementById('remainingDisplay').textContent = formatDuration(remaining);
+            } else {
+                document.getElementById('remainingDisplay').textContent = '+' + formatDuration(-remaining);
+            }
+        }
+
+        function calculateEarnings(shift) {
+            const duration = Date.now() - shift.startTime;
+            const hours = duration / (1000 * 60 * 60);
+            const startHour = new Date(shift.startTime).getHours();
+            
+            // Day shift
+            if (startHour >= 6 && startHour < 18) {
+                return hours * shift.startRates.day;
+            }
+            
+            // Night shift
+            const nightRate = shift.isOtherStore ? shift.startRates.nightOther : shift.startRates.night;
+            const nightHours = 12;
+            
+            if (hours <= nightHours) {
+                // Still within night hours - show proportional
+                return (hours / nightHours) * nightRate;
+            } else {
+                // Overtime - add day rate
+                const overtimeHours = hours - nightHours;
+                return nightRate + (overtimeHours * shift.startRates.day);
+            }
+        }
+
+        function formatDuration(ms) {
+            const totalSeconds = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // Store Toggle
+        document.getElementById('storeToggle').addEventListener('click', () => {
+            if (activeShift) {
+                if (confirm('Изменить магазин во время смены? Вся смена будет пересчитана по новой ставке.')) {
+                    activeShift.isOtherStore = !activeShift.isOtherStore;
+                    database.ref('users/' + currentUser + '/activeShift').set(activeShift);
+                    document.getElementById('toggleSwitch').classList.toggle('active');
+                }
+            } else {
+                document.getElementById('toggleSwitch').classList.toggle('active');
+            }
+        });
+
+        // Load Shifts
+        function loadShifts() {
+            database.ref('users/' + currentUser + '/shifts').orderByKey().limitToLast(20).once('value').then((snapshot) => {
+                const shifts = [];
+                snapshot.forEach((child) => {
+                    shifts.push({ id: child.key, ...child.val() });
+                });
+                shifts.reverse();
+
+                const listEl = document.getElementById('shiftList');
+                if (shifts.length === 0) {
+                    listEl.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><div>Смен пока нет</div></div>';
+                    return;
+                }
+
+                listEl.innerHTML = shifts.map(shift => {
+                    const date = new Date(shift.startTime).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+                    const startTime = new Date(shift.startTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    const endTime = new Date(shift.endTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                    
+                    let badgeClass = 'day';
+                    let badgeText = '🌞 День';
+                    if (shift.type === 'night') {
+                        badgeClass = 'night';
+                        badgeText = '🌙 Ночь (мой)';
+                    } else if (shift.type === 'nightOther') {
+                        badgeClass = 'night';
+                        badgeText = '🌙 Ночь (другой)';
+                    }
+
+                    return `
+                        <div class="shift-item">
+                            <div class="shift-header">
+                                <div class="shift-date">${date}</div>
+                                <div class="shift-badge ${badgeClass}">${badgeText}</div>
+                            </div>
+                            <div class="shift-time">${startTime} - ${endTime}</div>
+                            ${shift.error ? `<div class="shift-error">⚠️ ${shift.error}</div>` : ''}
+                            <div class="shift-amount">${shift.earnings.toFixed(2)}₾</div>
+                        </div>
+                    `;
+                }).join('');
+            });
+        }
+
+        // Rates
+        function updateRatesDisplay() {
+            document.getElementById('dayRateDisplay').textContent = rates.day.toFixed(1) + '₾/час';
+            document.getElementById('nightRateDisplay').textContent = rates.night + '₾';
+            document.getElementById('nightOtherRateDisplay').textContent = rates.nightOther + '₾';
+            document.getElementById('dayRateInput').value = rates.day;
+            document.getElementById('nightRateInput').value = rates.night;
+        }
+
+        document.getElementById('saveRatesBtn').addEventListener('click', () => {
+            const newDayRate = parseFloat(document.getElementById('dayRateInput').value);
+            const newNightRate = parseFloat(document.getElementById('nightRateInput').value);
+            
+            if (activeShift) {
+                if (!confirm('Изменить ставки во время активной смены? Вся смена будет пересчитана.')) {
+                    return;
+                }
+                activeShift.startRates = {
+                    day: newDayRate,
+                    night: newNightRate,
+                    nightOther: newNightRate + 20
+                };
+                database.ref('users/' + currentUser + '/activeShift').set(activeShift);
+            }
+
+            rates = {
+                day: newDayRate,
+                night: newNightRate,
+                nightOther: newNightRate + 20
+            };
+
+            database.ref('users/' + currentUser + '/rates').set(rates);
+            updateRatesDisplay();
+            showNotification('✅ Ставки обновлены!');
+        });
+
+        // Stats
+        function loadStats() {
+            const startDate = document.getElementById('statsStartDate').value;
+            const endDate = document.getElementById('statsEndDate').value;
+
+            database.ref('users/' + currentUser + '/shifts').once('value').then((snapshot) => {
+                let totalMinutes = 0;
+                let totalEarnings = 0;
+                let dayShifts = 0;
+                let nightShifts = 0;
+                let nightOtherShifts = 0;
+                const uniqueDays = new Set();
+
+                snapshot.forEach((child) => {
+                    const shift = child.val();
+                    const shiftDate = new Date(shift.startTime).toISOString().split('T')[0];
+                    
+                    if (startDate && shiftDate < startDate) return;
+                    if (endDate && shiftDate > endDate) return;
+
+                    totalMinutes += shift.duration / (1000 * 60);
+                    totalEarnings += shift.earnings;
+                    uniqueDays.add(shiftDate);
+
+                    if (shift.type === 'day') dayShifts++;
+                    else if (shift.type === 'night') nightShifts++;
+                    else if (shift.type === 'nightOther') nightOtherShifts++;
+                });
+
+                const hours = Math.floor(totalMinutes / 60);
+                const minutes = Math.floor(totalMinutes % 60);
+
+                document.getElementById('totalHoursStats').textContent = `${hours}ч ${minutes}м`;
+                document.getElementById('totalDaysStats').textContent = uniqueDays.size;
+                document.getElementById('totalEarnedStats').textContent = totalEarnings.toFixed(2) + '₾';
+                document.getElementById('dayShiftsStats').textContent = dayShifts;
+                document.getElementById('nightShiftsStats').textContent = nightShifts;
+                document.getElementById('nightOtherShiftsStats').textContent = nightOtherShifts;
+
+                // Load penalties
+                loadPenalties(totalEarnings);
+            });
+        }
+
+        document.getElementById('statsStartDate').addEventListener('change', loadStats);
+        document.getElementById('statsEndDate').addEventListener('change', loadStats);
+
+        // Penalties
+        function loadPenalties(totalEarnings) {
+            database.ref('users/' + currentUser + '/penalties').once('value').then((snapshot) => {
+                let totalPenalties = 0;
+                const penalties = [];
+
+                snapshot.forEach((child) => {
+                    const penalty = { id: child.key, ...child.val() };
+                    penalties.push(penalty);
+                    totalPenalties += penalty.amount;
+                });
+
+                document.getElementById('totalPenaltiesStats').textContent = '-' + totalPenalties.toFixed(2) + '₾';
+                document.getElementById('netEarningsStats').textContent = (totalEarnings - totalPenalties).toFixed(2) + '₾';
+
+                const listEl = document.getElementById('penaltyList');
+                if (penalties.length === 0) {
+                    listEl.innerHTML = '<div class="empty-state" style="padding: 20px;"><div>Штрафов нет</div></div>';
+                    return;
+                }
+
+                listEl.innerHTML = penalties.map(p => `
+                    <div class="shift-item">
+                        <div class="shift-header">
+                            <div class="shift-date">${new Date(p.date).toLocaleDateString('ru-RU')}</div>
+                            <button onclick="deletePenalty('${p.id}')" style="background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px;">Удалить</button>
+                        </div>
+                        <div style="margin: 8px 0; font-size: 14px;">${p.description}</div>
+                        <div class="shift-amount" style="color: var(--danger);">-${p.amount.toFixed(2)}₾</div>
+                    </div>
+                `).join('');
+            });
+        }
+
+        document.getElementById('addPenaltyBtn').addEventListener('click', () => {
+            const description = prompt('Описание штрафа:');
+            if (!description) return;
+            
+            const amount = parseFloat(prompt('Сумма штрафа (₾):'));
+            if (isNaN(amount) || amount <= 0) return;
+
+            const penalty = {
+                description: description,
+                amount: amount,
+                date: Date.now()
+            };
+
+            database.ref('users/' + currentUser + '/penalties').push(penalty);
+            loadStats();
+            showNotification('✅ Штраф добавлен');
+        });
+
+        window.deletePenalty = function(id) {
+            if (confirm('Удалить штраф?')) {
+                database.ref('users/' + currentUser + '/penalties/' + id).remove();
+                loadStats();
+                showNotification('✅ Штраф удален');
+            }
+        };
+
+        // Plan
+        function loadPlan() {
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('planMonth').value = currentMonth;
+
+            database.ref('users/' + currentUser + '/plan/' + currentMonth).once('value').then((snapshot) => {
+                if (snapshot.exists()) {
+                    const plan = snapshot.val();
+                    document.getElementById('planDayShifts').value = plan.dayShifts || 0;
+                    document.getElementById('planNightShifts').value = plan.nightShifts || 0;
+                    document.getElementById('planNightOtherShifts').value = plan.nightOtherShifts || 0;
+                }
+                updatePlanProgress();
+            });
+        }
+
+        document.getElementById('planMonth').addEventListener('change', loadPlan);
+        document.getElementById('planDayShifts').addEventListener('input', updatePlanCalculations);
+        document.getElementById('planNightShifts').addEventListener('input', updatePlanCalculations);
+        document.getElementById('planNightOtherShifts').addEventListener('input', updatePlanCalculations);
+
+        function updatePlanCalculations() {
+            const dayShifts = parseInt(document.getElementById('planDayShifts').value) || 0;
+            const nightShifts = parseInt(document.getElementById('planNightShifts').value) || 0;
+            const nightOtherShifts = parseInt(document.getElementById('planNightOtherShifts').value) || 0;
+
+            const dayEarnings = dayShifts * 12 * rates.day;
+            const nightEarnings = nightShifts * rates.night;
+            const nightOtherEarnings = nightOtherShifts * rates.nightOther;
+            const total = dayEarnings + nightEarnings + nightOtherEarnings;
+
+            document.getElementById('planDayEarnings').textContent = dayEarnings.toFixed(2) + '₾';
+            document.getElementById('planNightEarnings').textContent = nightEarnings.toFixed(2) + '₾';
+            document.getElementById('planNightOtherEarnings').textContent = nightOtherEarnings.toFixed(2) + '₾';
+            document.getElementById('planTotalEarnings').textContent = total.toFixed(2) + '₾';
+
+            updatePlanProgress();
+        }
+
+        function updatePlanProgress() {
+            const month = document.getElementById('planMonth').value;
+            const planDay = parseInt(document.getElementById('planDayShifts').value) || 0;
+            const planNight = parseInt(document.getElementById('planNightShifts').value) || 0;
+            const planNightOther = parseInt(document.getElementById('planNightOtherShifts').value) || 0;
+
+            database.ref('users/' + currentUser + '/shifts').once('value').then((snapshot) => {
+                let actualDay = 0, actualNight = 0, actualNightOther = 0;
+
+                snapshot.forEach((child) => {
+                    const shift = child.val();
+                    const shiftMonth = new Date(shift.startTime).toISOString().slice(0, 7);
+                    
+                    if (shiftMonth === month) {
+                        if (shift.type === 'day') actualDay++;
+                        else if (shift.type === 'night') actualNight++;
+                        else if (shift.type === 'nightOther') actualNightOther++;
+                    }
+                });
+
+                updateProgressBar('planDayProgress', 'planDayText', actualDay, planDay);
+                updateProgressBar('planNightProgress', 'planNightText', actualNight, planNight);
+                updateProgressBar('planNightOtherProgress', 'planNightOtherText', actualNightOther, planNightOther);
+            });
+        }
+
+        function updateProgressBar(progressId, textId, actual, plan) {
+            const percent = plan > 0 ? (actual / plan * 100) : 0;
+            document.getElementById(progressId).style.width = Math.min(percent, 100) + '%';
+            document.getElementById(textId).textContent = `${actual}/${plan} (${Math.round(percent)}%)`;
+        }
+
+        document.getElementById('savePlanBtn').addEventListener('click', () => {
+            const month = document.getElementById('planMonth').value;
+            const plan = {
+                dayShifts: parseInt(document.getElementById('planDayShifts').value) || 0,
+                nightShifts: parseInt(document.getElementById('planNightShifts').value) || 0,
+                nightOtherShifts: parseInt(document.getElementById('planNightOtherShifts').value) || 0
+            };
+
+            database.ref('users/' + currentUser + '/plan/' + month).set(plan);
+            showNotification('✅ План сохранен!');
+        });
+
+        // Menu
+        document.getElementById('menuBtn').addEventListener('click', () => {
+            document.getElementById('menuPanel').classList.add('active');
+            document.getElementById('menuOverlay').classList.add('active');
+        });
+
+        document.getElementById('menuClose').addEventListener('click', closeMenu);
+        document.getElementById('menuOverlay').addEventListener('click', closeMenu);
+
+        function closeMenu() {
+            document.getElementById('menuPanel').classList.remove('active');
+            document.getElementById('menuOverlay').classList.remove('active');
+        }
+
+        document.querySelectorAll('.menu-item[data-screen]').forEach(item => {
+            item.addEventListener('click', () => {
+                const screen = item.getAttribute('data-screen');
+                switchScreen(screen);
+                closeMenu();
+            });
+        });
+
+        function switchScreen(screenName) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenName + 'Screen').classList.add('active');
+            
+            if (screenName === 'stats') {
+                loadStats();
+            } else if (screenName === 'plan') {
+                loadPlan();
+            }
+        }
+
+        // Notification
+        function showNotification(message) {
+            const notif = document.createElement('div');
+            notif.className = 'notification success';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
