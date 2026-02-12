@@ -1164,6 +1164,12 @@
         });
 
         function loginUser(code) {
+            // Check password
+            if (code !== 'DEMO123') {
+                alert('Неверный пароль!');
+                return;
+            }
+            
             // Check if user exists in Firebase
             database.ref('users/' + code).once('value').then((snapshot) => {
                 currentUser = code;
