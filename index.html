@@ -134,7 +134,7 @@
             font-family: 'JetBrains Mono', monospace;
             font-weight: 600;
             text-align: center;
-            letter-spacing: 8px;
+            letter-spacing: 7px;
             text-transform: uppercase;
             background: var(--bg-card);
             border: 2px solid var(--border);
@@ -1152,7 +1152,7 @@
         // Login
         document.getElementById('loginBtn').addEventListener('click', () => {
             const code = document.getElementById('codeInput').value.trim().toUpperCase();
-            if (code.length === 6) {
+            if (code.length === 7) {
                 loginUser(code);
             }
         });
